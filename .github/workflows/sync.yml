@@ -1,0 +1,124 @@
+name: 自动更新 Jasna-LTX 数据
+on:
+  schedule:
+    # 半小时一次：兼顾及时性和对 JavDB 的请求压力
+    - cron: '*/30 * * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ltx-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: 检出仓库
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 设置 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # 兜底 A：熔断。上一轮受阻后写入的 skip_until 未到期，本轮直接跳过，一次请求都不发。
+      - name: 检查熔断状态
+        id: guard
+        run: |
+          now=$(date +%s)
+          skip=0
+          if [ -f data/sync-health.json ]; then
+            # 用 sed 直接抓 skip_until：不依赖 python，也不怕文件带 BOM 或被改坏
+            skip=$(sed -n 's/.*"skip_until"[^0-9]*\([0-9][0-9]*\).*/\1/p' data/sync-health.json | head -1)
+          fi
+          case "$skip" in ''|*[!0-9]*) skip=0 ;; esac
+          if [ "$skip" -gt "$now" ]; then
+            echo "skipped=true" >> "$GITHUB_OUTPUT"
+            echo "::warning::上一轮抓取受阻，熔断中；本轮跳过，不对 JavDB 发任何请求（到期 $(date -u -d @$skip '+%Y-%m-%d %H:%M UTC')）"
+          else
+            echo "skipped=false" >> "$GITHUB_OUTPUT"
+            echo "未熔断，正常抓取"
+          fi
+
+      - name: 随机抖动（0–180 秒）
+        if: steps.guard.outputs.skipped != 'true'
+        run: |
+          n=$((RANDOM % 180))
+          echo "随机等待 ${n}s"
+          sleep "$n"
+
+      - name: 抓取 JavDB 最新作品
+        if: steps.guard.outputs.skipped != 'true'
+        id: crawl
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          python scripts/sync_javdb.py --max-add 20 2>&1 | tee /tmp/sync.log
+
+      # 兜底 B：健康状态。脚本打 SYNC_STATUS=ok / blocked，这里据此累计失败次数并算下次熔断到期。
+      - name: 更新健康状态
+        if: steps.guard.outputs.skipped != 'true'
+        run: |
+          python - <<'PY'
+          import json, os, time, sys
+          path = 'data/sync-health.json'
+          now = int(time.time())
+          try:
+              st = json.load(open(path, encoding='utf-8'))
+          except Exception:
+              st = {}
+          log = ''
+          if os.path.exists('/tmp/sync.log'):
+              log = open('/tmp/sync.log', encoding='utf-8', errors='ignore').read()
+          ok = 'SYNC_STATUS=ok' in log
+          streak = int(st.get('fail_streak') or 0)
+          if ok:
+              # 正常：只在“刚从受阻恢复”或 ok_at 超过 6 小时未更新时才写，避免每轮都产生提交
+              if streak == 0 and st.get('ok_at') and now - int(st['ok_at']) < 6 * 3600:
+                  print('健康状态无变化（正常）')
+                  sys.exit(0)
+              new = {'ok_at': now, 'fail_streak': 0}
+          else:
+              streak += 1
+              backoff = [1800, 7200, 21600, 86400]   # 30 分 / 2 时 / 6 时 / 24 时
+              new = {'ok_at': int(st.get('ok_at') or 0), 'fail_streak': streak,
+                     'skip_until': now + backoff[min(streak - 1, 3)]}
+              print('::warning::抓取受阻，连续失败 %d 次，熔断至 %s UTC'
+                    % (streak, time.strftime('%Y-%m-%d %H:%M', time.gmtime(new['skip_until']))))
+          json.dump(new, open(path, 'w', encoding='utf-8'), ensure_ascii=False)
+          print('健康状态已更新:', new)
+          PY
+
+      - name: 检查是否有变更
+        id: verify
+        run: |
+          git add -A data/
+          if git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "没有新作品"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "检测到变更"
+          fi
+
+      - name: 提交并推送
+        if: steps.verify.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A data/
+          git commit -m "chore: 自动更新作品数据 $(date -u +%Y-%m-%dT%H:%M:%SZ)" || { echo "没有可提交的内容"; exit 0; }
+          # 多个 run 撞车时自动 rebase 重试
+          for i in 1 2 3 4 5; do
+            if git push; then echo "推送成功"; exit 0; fi
+            echo "push 被拒，rebase 后重试（第 $i 次）"
+            git pull --rebase --autostash origin main || true
+            sleep $((i * 3))
+          done
+          echo "多次重试仍无法推送"; exit 1

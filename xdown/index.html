@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
+<meta name="theme-color" content="#0b0f14">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>XDown</title>
+<link rel="manifest" href="manifest.webmanifest">
+<style>
+:root{--bg:#0b0f14;--card:#131a23;--line:#1e2836;--fg:#e6ebf2;--dim:#7f8b9c;--acc:#2563eb}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 -apple-system,"PingFang SC","Microsoft YaHei",system-ui,sans-serif}
+body{padding-bottom:70px;overscroll-behavior-y:contain}
+header{position:sticky;top:0;z-index:20;background:rgba(11,15,20,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);padding:calc(10px + env(safe-area-inset-top,0)) 12px 10px}
+.brand{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.logo{width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#2563eb,#7c3aed);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700}
+.brand h1{font-size:16px;margin:0;font-weight:700}
+.frow{display:flex;gap:8px}
+.frow input{flex:1;min-width:0;background:#161d27;border:1px solid var(--line);border-radius:12px;color:var(--fg);padding:11px 13px;font-size:15px;outline:none}
+.frow input:focus{border-color:#2f4a6d}
+.frow button{border:0;border-radius:12px;padding:0 15px;font-size:14px;font-weight:600}
+#paste{background:#1b2431;color:#cfd8e4;border:1px solid var(--line)}
+#go{background:var(--acc);color:#fff}
+.tabs{display:flex;gap:8px;margin-top:10px;overflow-x:auto}
+.tab{border:1px solid var(--line);background:#141b24;color:#c3ccd9;border-radius:999px;padding:7px 15px;font-size:13px;white-space:nowrap}
+.tab.on{background:var(--acc);border-color:var(--acc);color:#fff}
+main{padding:12px}
+.hint{color:var(--dim);font-size:13px;text-align:center;padding:30px 12px;line-height:1.9}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+@media(min-width:620px){.grid{grid-template-columns:repeat(3,1fr)}}
+@media(min-width:900px){.grid{grid-template-columns:repeat(4,1fr)}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.thumb{position:relative;aspect-ratio:3/4;background:#0d1118;overflow:hidden}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.thumb .play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.18)}
+.thumb .play i{width:52px;height:52px;border-radius:50%;background:rgba(37,99,235,.92);display:flex;align-items:center;justify-content:center}
+.thumb .play i:after{content:"";border-left:16px solid #fff;border-top:10px solid transparent;border-bottom:10px solid transparent;margin-left:4px}
+.thumb .badge{position:absolute;left:6px;top:6px;background:rgba(0,0,0,.62);border-radius:6px;font-size:11px;padding:2px 7px;color:#dbe4f0}
+.meta{padding:8px 9px 10px}
+.meta .t{font-size:12.5px;color:#cdd6e2;height:34px;overflow:hidden;line-height:17px}
+.meta .a{display:flex;align-items:center;gap:5px;margin-top:7px;font-size:12px;color:#7dc4ff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.meta .a span{color:var(--dim)}
+.acts{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.acts button,.acts a{flex:1 1 calc(50% - 3px);min-width:0;text-align:center;border:1px solid var(--line);background:#182029;color:#cfd8e4;border-radius:9px;padding:8px 0;font-size:12.5px;text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.acts .pri{background:var(--acc);border-color:var(--acc);color:#fff}
+.acts .dl{background:#14532d;border-color:#14532d;color:#d7f5e3}
+#player{position:fixed;inset:0;background:#000;z-index:100;display:none;flex-direction:column}
+#player.on{display:flex}
+#pbar{display:flex;align-items:center;gap:10px;padding:calc(8px + env(safe-area-inset-top,0)) 12px 8px;color:#cfd8e4;font-size:13px;background:#0b0f14}
+#pbar b{font-weight:600;color:#fff;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#pbar .x{width:34px;height:34px;border-radius:50%;border:0;background:#1b2431;color:#fff;font-size:16px}
+#pvid{flex:1;width:100%;background:#000;object-fit:contain}
+.pinfo{padding:10px 14px calc(14px + env(safe-area-inset-bottom,0));color:#9aa6b6;font-size:12.5px;max-height:20vh;overflow:auto}
+nav{position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;background:rgba(14,19,26,.98);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0)}
+nav a{flex:1;text-align:center;padding:9px 0 10px;color:#6f7c8d;font-size:11.5px;text-decoration:none}
+nav a.on{color:#4da3ff}
+nav a i{display:block;font-size:17px;line-height:20px;font-style:normal}
+.apkbar{display:flex;align-items:center;gap:8px;margin-top:10px;background:#10243a;border:1px solid #1d4ed8;border-radius:11px;padding:9px 12px;font-size:12.5px;color:#bcd7ff}
+.apkbar a{margin-left:auto;background:#2563eb;color:#fff;text-decoration:none;border-radius:8px;padding:6px 12px;font-weight:600;white-space:nowrap}
+.apkbar .x{border:0;background:transparent;color:#6f8bb5;font-size:15px}
+.toast{position:fixed;left:50%;bottom:84px;transform:translateX(-50%);background:rgba(20,28,38,.97);border:1px solid #2b3a4d;color:#e6ebf2;font-size:13px;padding:9px 16px;border-radius:999px;z-index:200;display:none;max-width:86vw;text-align:center}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><div class="logo">X</div><h1>XDown</h1></div>
+  <div class="frow">
+    <input id="q" type="text" placeholder="粘贴推文链接，或输入 @用户名" enterkeyhint="go" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <button id="paste">粘贴</button>
+    <button id="go">解析</button>
+  </div>
+  <div class="apkbar" id="apkbar">
+    <span>安装安卓 App，离线也能用</span>
+    <a href="XDown.apk" download>下载 APK</a>
+    <button class="x" id="apkx" aria-label="关闭">✕</button>
+  </div>
+  <div class="tabs">
+    <button class="tab on" data-v="parse">解析结果</button>
+    <button class="tab" data-v="author">作者作品</button>
+    <button class="tab" data-v="saved">我的</button>
+  </div>
+</header>
+
+<main id="main">
+  <div class="hint">
+    把 X 的推文链接粘贴进来 → 点「解析」<br>
+    然后在结果里选清晰度播放或下载<br><br>
+    也可以输入 <b>@用户名</b> 看 TA 的全部作品
+  </div>
+</main>
+
+<div id="player">
+  <div id="pbar"><b id="ptitle">播放</b><button class="x" id="pclose">✕</button></div>
+  <video id="pvid" controls playsinline webkit-playsinline preload="metadata"></video>
+  <div class="pinfo" id="pinfo"></div>
+</div>
+
+<nav>
+  <a class="on" data-tab="parse"><i>🔗</i>解析</a>
+  <a data-tab="author"><i>👤</i>作者</a>
+  <a data-tab="saved"><i>⬇</i>我的</a>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  var $ = function(s){ return document.querySelector(s); };
+  var state = { view:'parse', parsed:null, author:[], saved:[] };
+  try { state.saved = JSON.parse(localStorage.getItem('xd_saved')||'[]'); } catch(e){ state.saved=[]; }
+
+  function toast(m){ var t=$('#toast'); t.textContent=m; t.style.display='block'; clearTimeout(t._t); t._t=setTimeout(function(){t.style.display='none';},2400); }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function saveList(){ try{ localStorage.setItem('xd_saved', JSON.stringify(state.saved.slice(0,200))); }catch(e){} }
+  function getJSON(url){ return fetch(url,{cache:'no-store'}).then(function(r){ return r.json(); }); }
+
+  function thumbUrl(u){ return u ? ('/api/img?u=' + encodeURIComponent(u)) : ''; }
+
+  function current(){
+    if (state.view==='parse') return state.parsed ? [state.parsed] : [];
+    return state.view==='author' ? state.author : state.saved;
+  }
+
+  function render(){
+    var list = current(), main = $('#main');
+    if (!list.length){
+      main.innerHTML = '<div class="hint">' +
+        (state.view==='saved' ? '还没有内容<br>播放或下载后会自动记录在这里'
+         : state.view==='author' ? '先解析一条推文<br>再点结果里的「@作者 · 全部作品」'
+         : '把推文链接粘贴到上面 → 点「解析」<br><br>支持 x.com / twitter.com 的 status 链接<br>也支持直接输入 @用户名') + '</div>';
+      return;
+    }
+    var h = '<div class="grid">';
+    list.forEach(function(it,i){
+      var th = (it.videos[0] && it.videos[0].thumb) || it.thumb || it.photos[0] || '';
+      h += '<div class="card">' +
+        '<div class="thumb" data-play="'+i+'">' +
+          (th ? '<img loading="lazy" src="'+esc(th)+'" alt="" onerror="this.style.opacity=.12">' : '<div style="height:100%"></div>') +
+          (it.videos && it.videos.length ? '<div class="play"><i></i></div><div class="badge">视频</div>'
+                            : '<div class="badge">图片 '+((it.photos||[]).length)+'</div>') +
+        '</div>' +
+        '<div class="meta">' +
+          '<div class="t">'+esc(it.text||'')+'</div>' +
+          (it.author ? '<div class="a" data-author="'+esc(it.author)+'">@'+esc(it.author)+' <span>· 全部作品</span></div>' : '') +
+          '<div class="acts">' +
+            ((it.videos && it.videos.length)
+              ? ((it.videos.length>1 && it.videos[0].q)
+                  ? it.videos.map(function(v,k){ return '<button class="'+(k===0?'pri':'')+'" data-play="'+i+'" data-q="'+k+'">▶ '+esc(v.q)+'</button>'; }).join('')
+                  : '<button class="pri" data-play="'+i+'">▶ 播放</button><button class="dl" data-dl="'+i+'">⬇ 下载</button>')
+              : '<a class="pri" href="'+esc((it.photos||[])[0]||'')+'" target="_blank" rel="noopener">查看图片</a>') +
+          '</div>' +
+          ((it.videos && it.videos.length>1 && it.videos[0].q) ? '<div class="acts"><button class="dl" data-dl="'+i+'">⬇ 下载首个清晰度</button></div>' : '') +
+        '</div></div>';
+    });
+    h += '</div>';
+    main.innerHTML = h;
+  }
+
+  function play(it, qi){
+    if (!it.videos || !it.videos.length){ if (it.photos && it.photos[0]) window.open(it.photos[0],'_blank'); return; }
+    var v = it.videos[qi||0] || it.videos[0];
+    $('#ptitle').textContent = (it.author?('@'+it.author+' · '):'') + (it.text||'').slice(0,16);
+    var vid = $('#pvid');
+    vid.onerror = function(){ toast('这个清晰度播放失败，换一个试试'); };
+    vid.src = v.url; vid.load();
+    $('#pinfo').textContent = it.text || '';
+    $('#player').classList.add('on');
+    vid.play().catch(function(){});
+    if (!state.saved.some(function(x){return x.id===it.id;})) [state.saved.unshift(it), saveList()];
+  }
+
+  function download(it){
+    if (!it.videos || !it.videos.length){ toast('这条没有视频'); return; }
+    var a = document.createElement('a');
+    a.href = it.videos[0].url;
+    a.download = (it.author||'x') + '_' + it.id + '.mp4';
+    a.target = '_blank'; a.rel = 'noopener';
+    document.body.appendChild(a); a.click(); a.remove();
+    toast('开始下载（如无反应请在浏览器允许下载）');
+    if (!state.saved.some(function(x){return x.id===it.id;})) [state.saved.unshift(it), saveList()];
+  }
+
+  function isTweetUrl(s){ return /(?:x|twitter)\.com\/[A-Za-z0-9_]+\/status\/\d{8,25}/.test(s); }
+
+  function vidProxy(u){ return '/api/v?u=' + encodeURIComponent(u); }
+
+  function resolve(link){
+    state.view='parse'; setTab('parse');
+    $('#main').innerHTML = '<div class="hint">解析中…</div>';
+    var id = (link.match(/status\/(\d{8,25})/)||[])[1] || '';
+    if (!id){ $('#main').innerHTML='<div class="hint">链接里没有推文编号</div>'; return; }
+
+    getJSON('/api/fx?p=' + encodeURIComponent('/2/status/' + id)).then(function(j){
+      var st = j && (j.status || j.tweet);
+      if (!st){ return null; }
+      var media = (st.media && (st.media.all || st.media.videos || [])) || [];
+      if (!media.length && st.media && st.media.photos) media = st.media.photos;
+      var vids = [], pics = [];
+      (media || []).forEach(function(m){
+        if (m.type === 'video' || m.type === 'gif'){
+          var fmts = (m.formats || []).filter(function(f){ return (f.container||'').indexOf('mp4') >= 0; });
+          if (!fmts.length && m.url && /mp4/.test(m.url)) fmts = [{ url: m.url, bitrate: 0 }];
+          fmts.sort(function(a,b){ return (b.bitrate||0)-(a.bitrate||0); });
+          fmts.forEach(function(f){
+            if (!f.url) return;
+            var h = (f.url.match(/\/(\d{3,4})x(\d{3,4})\//) || [])[1];
+            vids.push({ url: vidProxy(f.url), raw: f.url,
+                        q: h ? (h + 'p') : '视频',
+                        thumb: thumbUrl(m.thumbnail_url || '') });
+          });
+        } else if (m.type === 'photo' && m.url){
+          pics.push(m.url);
+        }
+      });
+      // 多个清晰度统一从 variants 里取
+      if (!vids.length) return null;
+      var seen = {}, uniq = [];
+      vids.forEach(function(v){ if(!seen[v.raw]){ seen[v.raw]=1; uniq.push(v); } });
+      state.parsed = {
+        id: id,
+        text: (st.text || '').slice(0, 80) || ('已解析 · ' + uniq.length + ' 个清晰度'),
+        author: (st.author && st.author.screen_name) || '',
+        thumb: thumbUrl(st.media && st.media.all && st.media.all[0] && st.media.all[0].thumbnail_url || ''),
+        videos: uniq, photos: pics
+      };
+      render();
+      return true;
+    }).catch(function(){}).then(function(ok){
+      if (ok) return;
+      // 兜底：twittersaver
+      getJSON('/api/ts?u=' + encodeURIComponent(link)).then(function(j){
+        if (!j || !j.ok){ $('#main').innerHTML='<div class="hint">解析失败<br>' + esc((j&&j.error)||'这条可能不是视频') + '</div>'; return; }
+        var tp = thumbUrl(j.thumb);
+        var qs = (j.videos||[]).map(function(v){
+          var m = (v.src||'').match(/\/(\d{3,4})x(\d{3,4})\//);
+          return { url: vidProxy(v.src || v.url), raw: v.url, q: m ? (m[1]+'p') : '视频', thumb: tp };
+        });
+        state.parsed = { id:(link.match(/status\/(\d+)/)||[])[1]||'', text:'已解析 · ' + qs.length + ' 个清晰度',
+                         author:(link.match(/com\/([^/]+)\//)||[])[1]||'', thumb: tp, videos: qs, photos: [] };
+        render();
+      }).catch(function(){ $('#main').innerHTML='<div class="hint">网络错误</div>'; });
+    });
+  }
+
+  function loadAuthor(name){
+    name = String(name||'').replace(/^@/,'').trim();
+    if (!name) return;
+    state.view='author'; setTab('author');
+    $('#main').innerHTML = '<div class="hint">正在加载 @'+esc(name)+' 的作品…</div>';
+    getJSON('/api/fx?p=' + encodeURIComponent('/2/profile/'+name+'/media?count=40')).then(function(j){
+      var arr = (j && (j.results || (j.media && j.media.results))) || [];
+      state.author = arr.map(function(t){
+        var out = { id:(t&&t.id)||'', text:(t&&t.text)||'', author:(t&&t.author&&t.author.screen_name)||name,
+                    videos:[], photos:[], thumb:'' };
+        var m = (t && t.media && t.media.all) || [];
+        m.forEach(function(x){
+          if (x.type === 'video' || x.type === 'gif'){
+            var u = x.url || (x.variants && x.variants[0] && x.variants[0].url);
+            if (u) out.videos.push({ url:u, thumb: thumbUrl(x.thumbnail_url||'') });
+          } else if (x.type === 'photo' && x.url) out.photos.push(x.url);
+        });
+        return out;
+      }).filter(function(x){ return x.videos.length || x.photos.length; });
+      render();
+      if (!state.author.length) $('#main').innerHTML='<div class="hint">TA 没有可下载的媒体</div>';
+    }).catch(function(){ $('#main').innerHTML='<div class="hint">加载失败，检查网络</div>'; });
+  }
+
+  function setTab(v){
+    document.querySelectorAll('.tab').forEach(function(t){ t.classList.toggle('on', t.getAttribute('data-v')===v); });
+    document.querySelectorAll('nav a').forEach(function(t){ t.classList.toggle('on', t.getAttribute('data-tab')===v); });
+  }
+  function show(v){ state.view=v; setTab(v); render(); }
+
+  function submit(){
+    var s = ($('#q').value||'').trim();
+    if (!s){ toast('先粘贴链接或输入 @用户名'); return; }
+    if (isTweetUrl(s)) { resolve(s); return; }
+    if (/^@?[A-Za-z0-9_]{2,20}$/.test(s.replace(/^https?:\/\/(www\.)?(x|twitter)\.com\//,''))) {
+      loadAuthor(s.split('/').pop()); return;
+    }
+    var m = s.match(/(?:x|twitter)\.com\/[A-Za-z0-9_]+\/status\/\d+/);
+    if (m) { resolve(m[0]); return; }
+    toast('没识别出链接，请粘贴推文地址或 @用户名');
+  }
+
+  document.addEventListener('click', function(e){
+    var t = e.target;
+    var pl = t.closest('[data-play]'); if (pl){ var i=+pl.getAttribute('data-play'); var l=current(); if(l[i]) play(l[i], +(pl.getAttribute('data-q')||0)); return; }
+    var dl = t.closest('[data-dl]'); if (dl){ var j=+dl.getAttribute('data-dl'); var l2=current(); if(l2[j]) download(l2[j]); return; }
+    var au = t.closest('[data-author]'); if (au){ loadAuthor(au.getAttribute('data-author')); return; }
+    var tb = t.closest('.tab,nav a'); if (tb){ show(tb.getAttribute('data-v')||tb.getAttribute('data-tab')); return; }
+  });
+
+  $('#go').addEventListener('click', submit);
+  $('#q').addEventListener('keydown', function(e){ if(e.key==='Enter'){ this.blur(); submit(); } });
+  $('#paste').addEventListener('click', function(){
+    if (navigator.clipboard && navigator.clipboard.readText){
+      navigator.clipboard.readText().then(function(t){
+        t = (t||'').trim();
+        if (!t){ toast('剪贴板是空的'); return; }
+        $('#q').value = t;
+        toast('已粘贴，正在解析…');
+        setTimeout(submit, 150);
+      }).catch(function(){ toast('请长按输入框手动粘贴'); });
+    } else { toast('请长按输入框手动粘贴'); }
+  });
+  $('#pclose').addEventListener('click', function(){
+    var v=$('#pvid'); v.pause(); v.removeAttribute('src'); v.load();
+    $('#player').classList.remove('on');
+  });
+
+  // 系统分享 / 链接直接打开
+  (function(){
+    var sp = new URLSearchParams(location.search);
+    var shared = sp.get('url') || sp.get('text') || sp.get('title') || '';
+    var m = shared.match(/(?:x|twitter)\.com\/[A-Za-z0-9_]+\/status\/\d{8,25}/);
+    if (m){ $('#q').value = m[0]; setTimeout(submit, 250); }
+  })();
+
+  (function(){
+    var bar = document.getElementById('apkbar');
+    if (!bar) return;
+    var standalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
+                     || navigator.standalone === true;
+    if (standalone || localStorage.getItem('apk_hide') === '1') { bar.remove(); return; }
+    document.getElementById('apkx').addEventListener('click', function(){
+      localStorage.setItem('apk_hide','1'); bar.remove();
+    });
+    bar.querySelector('a').addEventListener('click', function(){
+      localStorage.setItem('apk_hide','1'); setTimeout(function(){ bar.remove(); }, 800);
+    });
+  })();
+
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function(){});
+  show('parse');
+})();
+</script>
+</body>
+</html>

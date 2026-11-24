@@ -1,0 +1,11 @@
+{
+  "name": "jasna-ltx-site",
+  "private": true,
+  "description": "Jasna-LTX static site + Pages Functions API",
+  "scripts": {
+    "deploy": "wrangler pages deploy . --project-name=jasna-ltx --branch=main"
+  },
+  "devDependencies": {
+    "wrangler": "^4.165.0"
+  }
+}

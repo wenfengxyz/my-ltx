@@ -1,0 +1,8 @@
+﻿name = "jasna-ltx"
+compatibility_date = "2026-11-20"
+pages_build_output_dir = "."
+
+[[kv_namespaces]]
+binding = "LTX_KV"
+id = "a803c3a1aed942e8b8435b6eb73765e3"
+preview_id = "3f268458897b4565a971a6f0d69a3848"

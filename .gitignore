@@ -1,0 +1,11 @@
+node_modules/
+package-lock.json
+scripts/turnstile_view.png
+scripts/check_reqs.js
+scripts/inspect_original_html.js
+scripts/search_verify.js
+scripts/temp*
+*.log
+.wrangler/
+dist/
+.dev.vars

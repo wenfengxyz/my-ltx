@@ -1,0 +1,12 @@
+﻿# 数据文件：缓存 1 天，允许 stale-while-revalidate
+/data/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+
+/*.js
+  Cache-Control: public, max-age=604800
+
+/*.css
+  Cache-Control: public, max-age=604800
+
+/
+  Cache-Control: public, max-age=3600
