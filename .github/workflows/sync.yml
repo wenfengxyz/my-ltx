@@ -1,8 +1,8 @@
 name: 自动更新 Jasna-LTX 数据
 on:
   schedule:
-    # 每一小时一次：兼顾及时性和对 JavDB 的请求压力
-    - cron: '0 * * * *'
+    # 半小时一次：兼顾及时性和对 JavDB 的请求压力
+    - cron: '*/30 * * * *'
   workflow_dispatch: {}
 
 permissions:
