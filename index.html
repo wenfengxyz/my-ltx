@@ -547,15 +547,13 @@ body.xd-only-sub .card:not([data-xd-sub]){display:none!important}
 })(();
 <script>
 function fixCover() {
-  // 直接选中懒加载封面图
   document.querySelectorAll('img[loading="lazy"]').forEach(img => {
     img.style.objectPosition = '78% 50%';
   })
 }
 fixCover();
-setTimeout(fixCover, 300);
-setTimeout(fixCover, 1000);
-setTimeout(fixCover, 2000);
+// 持续循环修正，Vue重绘覆盖之后马上补回来
+setInterval(fixCover, 500);
 
 const mo = new MutationObserver(()=>{
   fixCover();
@@ -564,6 +562,7 @@ const mo = new MutationObserver(()=>{
 const grid = document.querySelector('.grid');
 if(grid) mo.observe(grid, {childList:true, subtree:true});
 </script>
+
 
 
 </body>
