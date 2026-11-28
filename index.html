@@ -546,15 +546,15 @@ body.xd-only-sub .card:not([data-xd-sub]){display:none!important}
   setTimeout(check, 4000);
 })(();
 <script>
-// 动态注入样式，优先级最高
 const style = document.createElement('style');
 style.textContent = `
-img[loading="lazy"] {
-  object-position: 78% 50% !important;
+.cover img[loading="lazy"] {
+  object-position: 82% 50% !important;
 }
 `;
 document.head.appendChild(style);
 </script>
+
 
 </body>
 </html>
