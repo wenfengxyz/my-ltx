@@ -459,3 +459,16 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
   else boot();
 })();
+// 修正主海报墙封面裁剪
+function fixCoverImg() {
+  document.querySelectorAll('.cover img').forEach(img => {
+    img.style.objectPosition = '82% 50%';
+  });
+}
+fixCoverImg();
+const gridWrap = document.querySelector('.grid');
+if(gridWrap){
+  const ob = new MutationObserver(fixCoverImg);
+  ob.observe(gridWrap, {childList:true, subtree:true});
+}
+
