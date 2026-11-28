@@ -546,24 +546,15 @@ body.xd-only-sub .card:not([data-xd-sub]){display:none!important}
   setTimeout(check, 4000);
 })(();
 <script>
-function fixCover() {
-  document.querySelectorAll('img[loading="lazy"]').forEach(img => {
-    img.style.objectPosition = '78% 50%';
-  })
+// 动态注入样式，优先级最高
+const style = document.createElement('style');
+style.textContent = `
+img[loading="lazy"] {
+  object-position: 78% 50% !important;
 }
-fixCover();
-// 持续循环修正，Vue重绘覆盖之后马上补回来
-setInterval(fixCover, 500);
-
-const mo = new MutationObserver(()=>{
-  fixCover();
-  setTimeout(fixCover, 200);
-});
-const grid = document.querySelector('.grid');
-if(grid) mo.observe(grid, {childList:true, subtree:true});
+`;
+document.head.appendChild(style);
 </script>
-
-
 
 </body>
 </html>
