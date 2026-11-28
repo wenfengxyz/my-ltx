@@ -1187,3 +1187,7 @@ article.card.card.clickable .cover img {
     grid-template-columns: 1fr;
   }
 }
+.cover img {
+  object-position: 78% 50% !important;
+}
+
