@@ -459,22 +459,3 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
   else boot();
 })();
-// 修正主海报墙封面裁剪（适配懒加载）
-function fixCoverImg() {
-  document.querySelectorAll('.cover img').forEach(img => {
-    img.style.objectPosition = '82% 50%';
-  });
-}
-// 立即执行 + 延迟执行 + 监听
-fixCoverImg();
-setTimeout(fixCoverImg, 200);
-setTimeout(fixCoverImg, 500);
-
-const gridWrap = document.querySelector('.grid');
-if(gridWrap){
-  const ob = new MutationObserver(()=>{
-    setTimeout(fixCoverImg, 150);
-  });
-  ob.observe(gridWrap, {childList:true, subtree:true});
-}
-
